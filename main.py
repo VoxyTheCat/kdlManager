@@ -97,6 +97,7 @@ class KdlManagerApp(QMainWindow):
         self.tagFilterDropdown.currentTextChanged.connect(self.populateProjects)
         topBarLayout.addWidget(self.tagFilterDropdown)
 
+<<<<<<< HEAD
         self.sortDropdown = QComboBox()
         self.sortDropdown.setFixedHeight(36)
         self.sortDropdown.setMinimumWidth(160)
@@ -125,6 +126,8 @@ class KdlManagerApp(QMainWindow):
         self.sortDropdown.currentIndexChanged.connect(self.handleSortChanged)
         topBarLayout.addWidget(self.sortDropdown)
 
+=======
+>>>>>>> 427cfb9 (initial)
         mainLayout.addLayout(topBarLayout)
 
         scrollArea = QScrollArea()
@@ -154,6 +157,7 @@ class KdlManagerApp(QMainWindow):
 
         self.scannerTimer = QTimer(self)
         self.scannerTimer.timeout.connect(self.handleBackgroundScan)
+<<<<<<< HEAD
         self.scannerTimer.start(30000)
 
         self.populateProjects(rebuildDropdown=True)
@@ -165,6 +169,12 @@ class KdlManagerApp(QMainWindow):
         saveConfig(config)
         self.populateProjects()
 
+=======
+        self.scannerTimer.start(5000)
+
+        self.populateProjects(rebuildDropdown=True)
+
+>>>>>>> 427cfb9 (initial)
     def openSettings(self):
         modal = SettingsModal(self)
         if modal.exec() == QDialog.DialogCode.Accepted:
@@ -225,7 +235,10 @@ class KdlManagerApp(QMainWindow):
         config = loadConfig()
         showLaunch = config.get("showLaunchButton", True)
         autoExtractThumbs = config.get("autoProjectThumbnails", False)
+<<<<<<< HEAD
         sortByMode = config.get("sortBy", "modified")
+=======
+>>>>>>> 427cfb9 (initial)
         self.launchKdenliveButton.setVisible(showLaunch)
 
         manualPaths = config.get("projectPaths", [])
@@ -288,6 +301,7 @@ class KdlManagerApp(QMainWindow):
             if widget is not None:
                 widget.deleteLater()
 
+<<<<<<< HEAD
         if sortByMode == "name":
             sortedPaths = sorted(
                 allPaths,
@@ -306,6 +320,20 @@ class KdlManagerApp(QMainWindow):
                     unlaunched.append(path)
 
             sortedPaths = launched + unlaunched
+=======
+        launched = [path for path in launchHistory if path in allPaths]
+        launched.reverse()
+
+        unlaunched = []
+        for path in reversed(manualPaths):
+            if path not in launched and path in allPaths:
+                unlaunched.append(path)
+        for path in scannedPaths:
+            if path not in launched and path not in unlaunched and path in allPaths:
+                unlaunched.append(path)
+
+        sortedPaths = launched + unlaunched
+>>>>>>> 427cfb9 (initial)
 
         filteredPaths = []
         for path in sortedPaths:

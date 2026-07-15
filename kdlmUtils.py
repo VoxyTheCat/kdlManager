@@ -7,12 +7,18 @@ import json
 import subprocess
 
 
+<<<<<<< HEAD
 import xml.etree.ElementTree as ET
 import os
 
 def getKdlMeta(kdlProjectPath):
     """
     Parses .kdenlive project file to extract metadata properties using incremental XML streaming.
+=======
+def getKdlMeta(kdlProjectPath):
+    """
+    Parses .kdenlive project file to extract metadata properties.
+>>>>>>> 427cfb9 (initial)
 
     Returns:
         tuple: (projectID, duration, projectName, kdenliveVersion, docVersion)
@@ -28,6 +34,7 @@ def getKdlMeta(kdlProjectPath):
 
     projectName = os.path.basename(kdlProjectPath).split('.', 1)[0]
 
+<<<<<<< HEAD
     found_id = False
     found_ver = False
     found_doc_ver = False
@@ -62,6 +69,32 @@ def getKdlMeta(kdlProjectPath):
     except (ET.ParseError, Exception):
         return projectID, duration, projectName, kdenliveVersion, docVersion
 
+=======
+    try:
+        tree = ET.parse(kdlProjectPath)
+        root = tree.getroot()
+    except ET.ParseError:
+        return projectID, duration, projectName, kdenliveVersion, docVersion
+
+    main_bin = root.find(".//playlist[@id='main_bin']")
+    if main_bin is not None:
+        for prop in main_bin.findall('property'):
+            prop_name = prop.get('name')
+            if prop_name == 'kdenlive:docproperties.documentid':
+                projectID = prop.text or "Not Found"
+            elif prop_name == 'kdenlive:docproperties.kdenliveversion':
+                kdenliveVersion = prop.text or "Not Found"
+            elif prop_name == 'kdenlive:docproperties.version':
+                docVersion = prop.text or "Not Found"
+
+    for prop in root.findall('.//property'):
+        if prop.get('name') == 'kdenlive:duration':
+            val = prop.text
+            if val and val != "00:00:00:00" and val != "00:00:00.000":
+                duration = val
+                break
+
+>>>>>>> 427cfb9 (initial)
     return projectID, duration, projectName, kdenliveVersion, docVersion
 
 
@@ -71,6 +104,7 @@ def scanIndexedFolders(folderPaths):
     Crawls folder paths to discover all .kdenlive projects.
     Returns a list of unique absolute paths.
     """
+<<<<<<< HEAD
     found_files = set()
 
     for folder in folderPaths:
@@ -84,6 +118,18 @@ def scanIndexedFolders(folderPaths):
                     found_files.add(full_path)
 
     return list(found_files)
+=======
+    foundFiles = []
+    for folder in folderPaths:
+        if os.path.exists(folder) and os.path.isdir(folder):
+            for root, _, files in os.walk(folder):
+                for file in files:
+                    if file.endswith(".kdenlive"):
+                        fullPath = os.path.join(root, file)
+                        if fullPath not in foundFiles:
+                            foundFiles.append(fullPath)
+    return foundFiles
+>>>>>>> 427cfb9 (initial)
 
 
 
@@ -122,8 +168,11 @@ def readKdlmArchive(kdlmPath):
 
     return metadataDict, thumbnailBytes
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 427cfb9 (initial)
 def writeKdlmArchive(kdlmPath, metadataDict, thumbnailBytes=None):
     """
     Creates or overwrites a .kdlm tarball with metadata and an optional thumbnail.
