@@ -37,6 +37,8 @@ the installer will invoke `puyo` if found.
 puyo VoxyTheCat/kdlManager
 ```
 > `puyo` can be found [here](https://github.com/catcodelabs/puyo)
+
+Either installation method will install the program as an executable, like any other.
 ---
 ## License & Disclaimers
 
