@@ -14,6 +14,7 @@ A linux-native, lightweight project manager for [Kdenlive](https://kdenlive.org/
 
 ## Notes:
 Keep in mind that this is my first time properly working with Qt, so things **will** look off.
+I'm also not a UI designer.
 
 **This project is still in Beta!** It's not far from finished, but there's still some stuff to add and improvements to be made. If you have suggestions, consider opening an [issue](https://github.com/VoxyTheCat/kdlManager/issues).
 
