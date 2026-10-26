@@ -1,0 +1,11 @@
+[package]
+name = "KdlManager"
+version = "0.2"
+pkgrel = 1
+description = "Project Manager for Kdenlive"
+
+[build]
+makedepends = ["pyinstaller"]
+depends = ["kdenlive"]
+cmd = "pyinstaller -Fwn kdlmanager main.py"
+binary = "dist/kdlmanager"

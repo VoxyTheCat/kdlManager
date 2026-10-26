@@ -12,6 +12,7 @@ def loadConfig():
             "showLaunchButton": True,
             "watchFolders": True,
             "autoProjectThumbnails": True,
+            "sortBy": "modified",
             "projectPaths": [],
             "indexedFolders": [],
             "launchHistory": []
@@ -23,6 +24,7 @@ def loadConfig():
         with open(configPath, 'r') as f:
             configData = json.load(f)
 
+            # Safety checks for backwards compatibility (existing config files)
             if "indexedFolders" not in configData:
                 configData["indexedFolders"] = []
             if "projectPaths" not in configData:
@@ -37,6 +39,9 @@ def loadConfig():
                 configData["watchFolders"] = True
             if "autoProjectThumbnails" not in configData:
                 configData["autoProjectThumbnails"] = True
+            if "sortBy" not in configData:
+                configData["sortBy"] = "modified"
+
             saveConfig(configData)
             return configData
     except Exception:
@@ -45,10 +50,12 @@ def loadConfig():
             "showLaunchButton": True,
             "watchFolders": True,
             "autoProjectThumbnails": True,
+            "sortBy": "modified",
             "projectPaths": [],
             "indexedFolders": [],
             "launchHistory": []
         }
+
 def saveConfig(configData):
     with open(configPath, 'w') as f:
         json.dump(configData, f, indent=4)

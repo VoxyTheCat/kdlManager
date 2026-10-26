@@ -97,6 +97,34 @@ class KdlManagerApp(QMainWindow):
         self.tagFilterDropdown.currentTextChanged.connect(self.populateProjects)
         topBarLayout.addWidget(self.tagFilterDropdown)
 
+        self.sortDropdown = QComboBox()
+        self.sortDropdown.setFixedHeight(36)
+        self.sortDropdown.setMinimumWidth(160)
+        self.sortDropdown.addItems(["Sort by Last Modified", "Sort Alphabetically"])
+        self.sortDropdown.setStyleSheet("""
+            QComboBox {
+                background-color: #1e1e1e;
+                color: #fff;
+                border: 1px solid #444;
+                border-radius: 4px;
+                padding-left: 8px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #1e1e1e;
+                color: #fff;
+                selection-background-color: #3daee9;
+            }
+        """)
+
+        initial_config = loadConfig()
+        if initial_config.get("sortBy", "modified") == "name":
+            self.sortDropdown.setCurrentIndex(1)
+        else:
+            self.sortDropdown.setCurrentIndex(0)
+
+        self.sortDropdown.currentIndexChanged.connect(self.handleSortChanged)
+        topBarLayout.addWidget(self.sortDropdown)
+
         mainLayout.addLayout(topBarLayout)
 
         scrollArea = QScrollArea()
@@ -126,9 +154,16 @@ class KdlManagerApp(QMainWindow):
 
         self.scannerTimer = QTimer(self)
         self.scannerTimer.timeout.connect(self.handleBackgroundScan)
-        self.scannerTimer.start(5000)
+        self.scannerTimer.start(30000)
 
         self.populateProjects(rebuildDropdown=True)
+
+    def handleSortChanged(self, index):
+        sort_mode = "name" if index == 1 else "modified"
+        config = loadConfig()
+        config["sortBy"] = sort_mode
+        saveConfig(config)
+        self.populateProjects()
 
     def openSettings(self):
         modal = SettingsModal(self)
@@ -190,6 +225,7 @@ class KdlManagerApp(QMainWindow):
         config = loadConfig()
         showLaunch = config.get("showLaunchButton", True)
         autoExtractThumbs = config.get("autoProjectThumbnails", False)
+        sortByMode = config.get("sortBy", "modified")
         self.launchKdenliveButton.setVisible(showLaunch)
 
         manualPaths = config.get("projectPaths", [])
@@ -252,18 +288,24 @@ class KdlManagerApp(QMainWindow):
             if widget is not None:
                 widget.deleteLater()
 
-        launched = [path for path in launchHistory if path in allPaths]
-        launched.reverse()
+        if sortByMode == "name":
+            sortedPaths = sorted(
+                allPaths,
+                key=lambda p: os.path.basename(p).lower()
+            )
+        else:
+            launched = [path for path in launchHistory if path in allPaths]
+            launched.reverse()
 
-        unlaunched = []
-        for path in reversed(manualPaths):
-            if path not in launched and path in allPaths:
-                unlaunched.append(path)
-        for path in scannedPaths:
-            if path not in launched and path not in unlaunched and path in allPaths:
-                unlaunched.append(path)
+            unlaunched = []
+            for path in reversed(manualPaths):
+                if path not in launched and path in allPaths:
+                    unlaunched.append(path)
+            for path in scannedPaths:
+                if path not in launched and path not in unlaunched and path in allPaths:
+                    unlaunched.append(path)
 
-        sortedPaths = launched + unlaunched
+            sortedPaths = launched + unlaunched
 
         filteredPaths = []
         for path in sortedPaths:

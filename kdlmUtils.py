@@ -7,9 +7,12 @@ import json
 import subprocess
 
 
+import xml.etree.ElementTree as ET
+import os
+
 def getKdlMeta(kdlProjectPath):
     """
-    Parses .kdenlive project file to extract metadata properties.
+    Parses .kdenlive project file to extract metadata properties using incremental XML streaming.
 
     Returns:
         tuple: (projectID, duration, projectName, kdenliveVersion, docVersion)
@@ -25,29 +28,39 @@ def getKdlMeta(kdlProjectPath):
 
     projectName = os.path.basename(kdlProjectPath).split('.', 1)[0]
 
+    found_id = False
+    found_ver = False
+    found_doc_ver = False
+    found_duration = False
+
     try:
-        tree = ET.parse(kdlProjectPath)
-        root = tree.getroot()
-    except ET.ParseError:
-        return projectID, duration, projectName, kdenliveVersion, docVersion
+        context = ET.iterparse(kdlProjectPath, events=('end',))
+        for event, elem in context:
+            if elem.tag == 'property':
+                prop_name = elem.get('name')
 
-    main_bin = root.find(".//playlist[@id='main_bin']")
-    if main_bin is not None:
-        for prop in main_bin.findall('property'):
-            prop_name = prop.get('name')
-            if prop_name == 'kdenlive:docproperties.documentid':
-                projectID = prop.text or "Not Found"
-            elif prop_name == 'kdenlive:docproperties.kdenliveversion':
-                kdenliveVersion = prop.text or "Not Found"
-            elif prop_name == 'kdenlive:docproperties.version':
-                docVersion = prop.text or "Not Found"
+                if not found_id and prop_name == 'kdenlive:docproperties.documentid':
+                    projectID = elem.text or "Not Found"
+                    found_id = True
+                elif not found_ver and prop_name == 'kdenlive:docproperties.kdenliveversion':
+                    kdenliveVersion = elem.text or "Not Found"
+                    found_ver = True
+                elif not found_doc_ver and prop_name == 'kdenlive:docproperties.version':
+                    docVersion = elem.text or "Not Found"
+                    found_doc_ver = True
+                elif not found_duration and prop_name == 'kdenlive:duration':
+                    val = elem.text
+                    if val and val not in ("00:00:00:00", "00:00:00.000"):
+                        duration = val
+                        found_duration = True
 
-    for prop in root.findall('.//property'):
-        if prop.get('name') == 'kdenlive:duration':
-            val = prop.text
-            if val and val != "00:00:00:00" and val != "00:00:00.000":
-                duration = val
+            elem.clear()
+
+            if found_id and found_ver and found_doc_ver and found_duration:
                 break
+
+    except (ET.ParseError, Exception):
+        return projectID, duration, projectName, kdenliveVersion, docVersion
 
     return projectID, duration, projectName, kdenliveVersion, docVersion
 
@@ -58,16 +71,19 @@ def scanIndexedFolders(folderPaths):
     Crawls folder paths to discover all .kdenlive projects.
     Returns a list of unique absolute paths.
     """
-    foundFiles = []
+    found_files = set()
+
     for folder in folderPaths:
-        if os.path.exists(folder) and os.path.isdir(folder):
-            for root, _, files in os.walk(folder):
-                for file in files:
-                    if file.endswith(".kdenlive"):
-                        fullPath = os.path.join(root, file)
-                        if fullPath not in foundFiles:
-                            foundFiles.append(fullPath)
-    return foundFiles
+        if not (os.path.exists(folder) and os.path.isdir(folder)):
+            continue
+
+        for root, _, files in os.walk(folder):
+            for file in files:
+                if file.lower().endswith(".kdenlive"):
+                    full_path = os.path.abspath(os.path.join(root, file))
+                    found_files.add(full_path)
+
+    return list(found_files)
 
 
 
@@ -105,6 +121,8 @@ def readKdlmArchive(kdlmPath):
         print(f"Error reading .kdlm archive: {e}")
 
     return metadataDict, thumbnailBytes
+
+
 
 def writeKdlmArchive(kdlmPath, metadataDict, thumbnailBytes=None):
     """
