@@ -35,6 +35,7 @@ the installer will invoke `puyo` if found.
 ```bash
 puyo VoxyTheCat/kdlManager
 ```
+> `puyo` can be found [here](https://github.com/catcodelabs/puyo)
 ---
 ## License & Disclaimers
 
