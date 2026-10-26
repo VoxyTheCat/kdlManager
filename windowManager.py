@@ -21,6 +21,7 @@ class ProjectCard(QFrame):
 
         self.isMissing = not os.path.exists(projectPath)
 
+        # Safe read if file is available
         if not self.isMissing:
             _, duration, xmlName, kdenliveVer, _ = getKdlMeta(projectPath)
         else:
@@ -452,7 +453,7 @@ class SettingsModal(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("kdlManager Settings")
-        self.resize(500, 420)
+        self.resize(550, 480)
         self.setStyleSheet("""
             QDialog { background-color: #1e1e1e; color: #fff; }
             QLabel { color: #fff; font-weight: bold; }
@@ -460,10 +461,21 @@ class SettingsModal(QDialog):
             QListWidget { background-color: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 4px; }
             QPushButton { background-color: #2a2a2a; color: white; border: 1px solid #444; border-radius: 4px; padding: 6px 12px; }
             QPushButton:hover { background-color: #3daee9; border-color: #3daee9; }
+            QTabWidget::pane { border: 1px solid #444; background: #1e1e1e; border-radius: 4px; }
+            QTabBar::tab { background: #2a2a2a; color: #aaa; padding: 8px 16px; border-top-left-radius: 4px; border-top-right-radius: 4px; margin-right: 2px; }
+            QTabBar::tab:selected { background: #3daee9; color: white; font-weight: bold; }
+            QTableWidget { background-color: #2a2a2a; color: #fff; gridline-color: #444; border: 1px solid #444; border-radius: 4px; }
+            QHeaderView::section { background-color: #1e1e1e; color: #fff; padding: 4px; border: 1px solid #444; font-weight: bold; }
         """)
 
         mainLayout = QVBoxLayout(self)
-        mainLayout.setSpacing(12)
+
+        self.tabs = QTabWidget()
+        mainLayout.addWidget(self.tabs)
+
+        self.tabStandard = QWidget()
+        tab1Layout = QVBoxLayout(self.tabStandard)
+        tab1Layout.setSpacing(12)
 
         optionsLayout = QVBoxLayout()
         optionsLayout.setSpacing(8)
@@ -476,26 +488,65 @@ class SettingsModal(QDialog):
         self.launchButtonCheckbox.stateChanged.connect(self.handleLaunchButtonToggle)
         optionsLayout.addWidget(self.launchButtonCheckbox)
 
-        self.watchFoldersCheckbox = QCheckBox("Auto-Scan Folders in Background every 30s)")
+        self.watchFoldersCheckbox = QCheckBox("Auto-Scan Folders in Background (Every 5s)")
         self.watchFoldersCheckbox.stateChanged.connect(self.handleWatchFoldersToggle)
         optionsLayout.addWidget(self.watchFoldersCheckbox)
 
-        self.autoThumbCheckbox = QCheckBox("Auto-set project thumbnails")
-        self.autoThumbCheckbox.stateChanged.connect(self.handleAutoThumbnailsToggle)
-        optionsLayout.addWidget(self.autoThumbCheckbox)
+        tab1Layout.addLayout(optionsLayout)
 
-        mainLayout.addLayout(optionsLayout)
-
-        mainLayout.addWidget(QLabel("Indexed Folders:"))
+        tab1Layout.addWidget(QLabel("Indexed Folders:"))
         self.folderList = QListWidget()
-        mainLayout.addWidget(self.folderList, stretch=1)
+        tab1Layout.addWidget(self.folderList)
 
         folderActionsLayout = QHBoxLayout()
         self.removeFolderButton = QPushButton("Remove Selected Folder")
         self.removeFolderButton.clicked.connect(self.handleRemoveFolder)
         folderActionsLayout.addWidget(self.removeFolderButton)
         folderActionsLayout.addStretch()
-        mainLayout.addLayout(folderActionsLayout)
+        tab1Layout.addLayout(folderActionsLayout)
+
+        self.tabs.addTab(self.tabStandard, "General Settings")
+
+        self.tabExperimental = QWidget()
+        tab2Layout = QVBoxLayout(self.tabExperimental)
+        tab2Layout.setSpacing(10)
+
+        tab2Layout.addWidget(QLabel("🔬 Advanced Experimental Flags"))
+        infoText = QLabel("Note: Experimental settings may alter project archives or background processing cycles. They will not corrupt your Project")
+        infoText.setStyleSheet("color: #ffa500; font-size: 10px; font-style: italic;")
+        tab2Layout.addWidget(infoText)
+
+        self.experimentalTable = QTableWidget()
+        self.experimentalTable.setColumnCount(3)
+        self.experimentalTable.setHorizontalHeaderLabels(["Setting", "Value", "Default"])
+
+        self.experimentalTable.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.experimentalTable.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self.experimentalTable.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+
+        self.experimentalTable.horizontalHeader().setMinimumSectionSize(80)
+
+        self.experimentalTable.verticalHeader().setVisible(False)
+        self.experimentalTable.setRowCount(1)
+
+        itemSetting = QTableWidgetItem("autoProjectThumbnails")
+        itemSetting.setFlags(itemSetting.flags() ^ Qt.ItemFlag.ItemIsEditable) # Read-only
+        itemSetting.setToolTip("Searches system backup folders to extract & embed missing project thumbnails.")
+        self.experimentalTable.setItem(0, 0, itemSetting)
+
+        self.valDropdown = QComboBox()
+        self.valDropdown.addItems(["false", "true"])
+        self.valDropdown.setStyleSheet("background-color: #1e1e1e; color: #fff; border: none; padding: 2px;")
+        self.valDropdown.currentTextChanged.connect(self.handleAutoThumbnailsChanged)
+        self.experimentalTable.setCellWidget(0, 1, self.valDropdown)
+
+        itemDefault = QTableWidgetItem("true")
+        itemDefault.setFlags(itemDefault.flags() ^ Qt.ItemFlag.ItemIsEditable)
+        itemDefault.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.experimentalTable.setItem(0, 2, itemDefault)
+
+        tab2Layout.addWidget(self.experimentalTable)
+        self.tabs.addTab(self.tabExperimental, "Experimental")
 
         bottomLayout = QHBoxLayout()
         bottomLayout.addStretch()
@@ -511,7 +562,9 @@ class SettingsModal(QDialog):
         self.reopenCheckbox.setChecked(config.get("reopenOnClose", True))
         self.launchButtonCheckbox.setChecked(config.get("showLaunchButton", True))
         self.watchFoldersCheckbox.setChecked(config.get("watchFolders", True))
-        self.autoThumbCheckbox.setChecked(config.get("autoProjectThumbnails", True))
+
+        isAutoThumbEnabled = config.get("autoProjectThumbnails", False)
+        self.valDropdown.setCurrentText("true" if isAutoThumbEnabled else "false")
 
         self.folderList.clear()
         for folder in config.get("indexedFolders", []):
@@ -532,9 +585,9 @@ class SettingsModal(QDialog):
         config["watchFolders"] = (state == Qt.CheckState.Checked.value)
         saveConfig(config)
 
-    def handleAutoThumbnailsToggle(self, state):
+    def handleAutoThumbnailsChanged(self, text):
         config = loadConfig()
-        config["autoProjectThumbnails"] = (state == Qt.CheckState.Checked.value)
+        config["autoProjectThumbnails"] = (text == "true")
         saveConfig(config)
 
     def handleRemoveFolder(self):

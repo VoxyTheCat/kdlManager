@@ -1,4 +1,6 @@
 # main.py
+# the main kdlmanager code. No, I do not know how to use Qt.
+# Icons can be an absolute mess, I know.
 import sys
 import os
 from PyQt6.QtWidgets import (
@@ -97,37 +99,6 @@ class KdlManagerApp(QMainWindow):
         self.tagFilterDropdown.currentTextChanged.connect(self.populateProjects)
         topBarLayout.addWidget(self.tagFilterDropdown)
 
-<<<<<<< HEAD
-        self.sortDropdown = QComboBox()
-        self.sortDropdown.setFixedHeight(36)
-        self.sortDropdown.setMinimumWidth(160)
-        self.sortDropdown.addItems(["Sort by Last Modified", "Sort Alphabetically"])
-        self.sortDropdown.setStyleSheet("""
-            QComboBox {
-                background-color: #1e1e1e;
-                color: #fff;
-                border: 1px solid #444;
-                border-radius: 4px;
-                padding-left: 8px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #1e1e1e;
-                color: #fff;
-                selection-background-color: #3daee9;
-            }
-        """)
-
-        initial_config = loadConfig()
-        if initial_config.get("sortBy", "modified") == "name":
-            self.sortDropdown.setCurrentIndex(1)
-        else:
-            self.sortDropdown.setCurrentIndex(0)
-
-        self.sortDropdown.currentIndexChanged.connect(self.handleSortChanged)
-        topBarLayout.addWidget(self.sortDropdown)
-
-=======
->>>>>>> 427cfb9 (initial)
         mainLayout.addLayout(topBarLayout)
 
         scrollArea = QScrollArea()
@@ -157,24 +128,10 @@ class KdlManagerApp(QMainWindow):
 
         self.scannerTimer = QTimer(self)
         self.scannerTimer.timeout.connect(self.handleBackgroundScan)
-<<<<<<< HEAD
-        self.scannerTimer.start(30000)
-
-        self.populateProjects(rebuildDropdown=True)
-
-    def handleSortChanged(self, index):
-        sort_mode = "name" if index == 1 else "modified"
-        config = loadConfig()
-        config["sortBy"] = sort_mode
-        saveConfig(config)
-        self.populateProjects()
-
-=======
         self.scannerTimer.start(5000)
 
         self.populateProjects(rebuildDropdown=True)
 
->>>>>>> 427cfb9 (initial)
     def openSettings(self):
         modal = SettingsModal(self)
         if modal.exec() == QDialog.DialogCode.Accepted:
@@ -235,10 +192,6 @@ class KdlManagerApp(QMainWindow):
         config = loadConfig()
         showLaunch = config.get("showLaunchButton", True)
         autoExtractThumbs = config.get("autoProjectThumbnails", False)
-<<<<<<< HEAD
-        sortByMode = config.get("sortBy", "modified")
-=======
->>>>>>> 427cfb9 (initial)
         self.launchKdenliveButton.setVisible(showLaunch)
 
         manualPaths = config.get("projectPaths", [])
@@ -301,26 +254,6 @@ class KdlManagerApp(QMainWindow):
             if widget is not None:
                 widget.deleteLater()
 
-<<<<<<< HEAD
-        if sortByMode == "name":
-            sortedPaths = sorted(
-                allPaths,
-                key=lambda p: os.path.basename(p).lower()
-            )
-        else:
-            launched = [path for path in launchHistory if path in allPaths]
-            launched.reverse()
-
-            unlaunched = []
-            for path in reversed(manualPaths):
-                if path not in launched and path in allPaths:
-                    unlaunched.append(path)
-            for path in scannedPaths:
-                if path not in launched and path not in unlaunched and path in allPaths:
-                    unlaunched.append(path)
-
-            sortedPaths = launched + unlaunched
-=======
         launched = [path for path in launchHistory if path in allPaths]
         launched.reverse()
 
@@ -333,7 +266,6 @@ class KdlManagerApp(QMainWindow):
                 unlaunched.append(path)
 
         sortedPaths = launched + unlaunched
->>>>>>> 427cfb9 (initial)
 
         filteredPaths = []
         for path in sortedPaths:
