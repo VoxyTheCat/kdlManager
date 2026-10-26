@@ -31,7 +31,7 @@ chmod +x installer.sh # make the installer executable
 ```
 the installer will invoke `puyo` if found.
 
-### Via `puyo` directly (recommended)
+### Via `puyo` directly (recommended for arch-based linux)
 ```bash
 puyo VoxyTheCat/kdlManager
 ```
